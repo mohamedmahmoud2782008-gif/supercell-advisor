@@ -4,7 +4,7 @@
 const axios       = require('axios');
 const { extractSearchKeywords } = require('./gameDetector');
 // التعديل هنا: غيرنا الـ s لـ S كبيرة لتطابق اسم الملف SearchCache.js
-const searchCache = require('./src/utils/searchCache../utils/searchCache'); 
+const searchCache = require('../utils/searchCache');
 
 const TAVILY_KEY = process.env.TAVILY_API_KEY;
 
