@@ -3,7 +3,8 @@
 // ═══════════════════════════════════════════════════
 const axios       = require('axios');
 const { extractSearchKeywords } = require('./gameDetector');
-const searchCache = require('../utils/searchCache');
+// التعديل هنا: غيرنا الـ s لـ S كبيرة لتطابق اسم الملف SearchCache.js
+const searchCache = require('../utils/SearchCache'); 
 
 const TAVILY_KEY = process.env.TAVILY_API_KEY;
 
