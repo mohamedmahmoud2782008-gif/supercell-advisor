@@ -5,7 +5,7 @@
 const TTL_MS      = parseInt(process.env.CACHE_TTL_MS, 10) || 60 * 60 * 1000; // ساعة
 const MAX_ENTRIES = parseInt(process.env.CACHE_MAX,    10) || 200;             // أقصى عدد مدخلات
 
-class SearchCache {
+class searchCache {
     constructor() {
         this._store = new Map();
     }
