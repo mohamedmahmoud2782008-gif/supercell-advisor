@@ -122,7 +122,7 @@ app.use(helmet({
 
 // ── CORS — Fix #2: strict origin from env ─────────
 app.use(cors({
-    origin:  process.env.ALLOWED_ORIGIN || 'http://localhost:3000',
+    origin: '*',
     methods: ['GET', 'POST']
 }));
 
