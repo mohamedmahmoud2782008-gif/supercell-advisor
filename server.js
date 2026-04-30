@@ -30,15 +30,15 @@ const TokenManager  = require('./src/utils/TokenManager');
 const { validate, chatSchema, analyzeImageSchema } = require('./src/utils/validation');
 const { createBreaker } = require('./src/utils/circuitBreaker');
 const { detectGame }    = require('./src/Services/gameDetector');
-const { searchWeb }     = require('./src/Services/SearchService');
+const { searchWeb }     = require('./src/Services/searchService');
 const {
     buildAgents, buildRound2Angles, buildJudgeSystem,
     VISION_PROMPTS, GAME_LABELS
-} = require('./src/services/promptBuilder');
+} = require('./src/Services/promptBuilder');
 const {
     callGroq, callGeminiStream, callGeminiVision,
     stripThinking, createTimer
-} = require('./src/services/aiCallers');
+} = require('./src/Services/aiCallers');
 
 // ═══════════════════════════════════════════════════
 // Config — all magic numbers from env with fallbacks
