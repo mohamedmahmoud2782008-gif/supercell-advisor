@@ -29,8 +29,8 @@ const AppError      = require('./src/errors/AppError');
 const TokenManager  = require('./src/utils/TokenManager');
 const { validate, chatSchema, analyzeImageSchema } = require('./src/utils/validation');
 const { createBreaker } = require('./src/utils/circuitBreaker');
-const { detectGame }    = require('./src/services/gameDetector');
-const { searchWeb }     = require('./src/services/searchService');
+const { detectGame }    = require('./src/Services/gameDetector');
+const { searchWeb }     = require('./src/Services/SearchService');
 const {
     buildAgents, buildRound2Angles, buildJudgeSystem,
     VISION_PROMPTS, GAME_LABELS
