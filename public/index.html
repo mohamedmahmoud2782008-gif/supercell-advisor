@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ميزان | المحرك التحليلي الخارق</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root {
+  --bg:         #03050a;
+  --surface:    rgba(10,15,28,0.85);
+  --surface2:   rgba(15,22,42,0.9);
+  --border:     rgba(255,255,255,0.07);
+  --border2:    rgba(255,255,255,0.13);
+  --accent:     #00c6ff;
+  --accent2:    #5b7cff;
+  --glow:       rgba(0,198,255,0.18);
+  --gold:       #ffb700;
+  --gold-glow:  rgba(255,183,0,0.22);
+  --text:       #dde4f0;
+  --text2:      #7a8ba8;
+  --text3:      #3d4f6a;
+  --success:    #00e676;
+  --danger:     #ff4d6d;
+  --sidebar-w:  280px;
+  --radius:     16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Cairo',sans-serif;
+  display:flex;flex-direction:column;
+}
+
+/* ─── Particles Canvas ─── */
+#canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;}
+
+/* ─── Progress ─── */
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:999;background:rgba(255,255,255,.04);}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--gold));
+  box-shadow:0 0 12px var(--accent);transition:width .7s ease;}
+
+/* ─── Header ─── */
+header{
+  position:relative;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;
+  background:rgba(3,5,10,.9);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.logo-mark{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;box-shadow:0 0 20px var(--glow);
+}
+.logo-text{font-size:1.25rem;font-weight:900;
+  background:linear-gradient(135deg,#fff 30%,var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-size:.6rem;color:var(--text3);letter-spacing:.06em;}
+.hdr-btns{display:flex;align-items:center;gap:8px;}
+.hdr-btn{
+  height:34px;padding:0 14px;border-radius:9px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text2);font-family:'Cairo',sans-serif;font-size:.78rem;font-weight:600;
+  cursor:pointer;transition:.2s;white-space:nowrap;
+}
+.hdr-btn:hover{background:var(--surface2);border-color:var(--border2);color:var(--text);}
+.hdr-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border:none;box-shadow:0 4px 16px var(--glow);}
+.hdr-btn.primary:hover{transform:translateY(-1px);box-shadow:0 6px 22px var(--glow);}
+
+/* ─── Layout ─── */
+.layout{display:flex;flex:1;overflow:hidden;position:relative;z-index:1;}
+
+/* ─── Sidebar ─── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:rgba(4,7,15,.95);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;
+  transition:width .35s cubic-bezier(.4,0,.2,1),opacity .3s;
+  overflow:hidden;
+}
+.sidebar.closed{width:0;opacity:0;border-left:none;}
+.sb-head{padding:16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sb-title{font-size:.72rem;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;}
+.sb-new{
+  width:100%;padding:9px 14px;border-radius:10px;
+  background:rgba(0,198,255,.08);border:1px solid rgba(0,198,255,.2);
+  color:var(--accent);font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;
+  cursor:pointer;transition:.2s;text-align:right;
+}
+.sb-new:hover{background:rgba(0,198,255,.14);}
+.sb-list{flex:1;overflow-y:auto;padding:10px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.06) transparent;}
+.sb-item{
+  padding:10px 12px;border-radius:10px;cursor:pointer;
+  border:1px solid transparent;transition:.18s;
+  margin-bottom:4px;position:relative;
+}
+.sb-item:hover{background:rgba(255,255,255,.04);border-color:var(--border);}
+.sb-item.active{background:rgba(0,198,255,.07);border-color:rgba(0,198,255,.2);}
+.sb-q{font-size:.8rem;font-weight:600;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;}
+.sb-date{font-size:.63rem;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:4px;}
+.sb-date::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.4;}
+.sb-del{
+  position:absolute;left:8px;top:50%;transform:translateY(-50%);
+  opacity:0;width:22px;height:22px;border-radius:6px;
+  background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.2);
+  color:var(--danger);font-size:11px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.15s;
+}
+.sb-item:hover .sb-del{opacity:1;}
+.sb-empty{text-align:center;padding:30px 16px;color:var(--text3);font-size:.78rem;line-height:1.8;}
+.sb-empty-icon{font-size:1.8rem;opacity:.3;margin-bottom:8px;}
+
+/* ─── Chat ─── */
+.chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.chat-inner{max-width:820px;width:100%;margin:0 auto;padding:0 16px;
+  display:flex;flex-direction:column;flex:1;overflow:hidden;}
+#chatBox{flex:1;overflow-y:auto;padding:24px 0;display:flex;flex-direction:column;gap:20px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.08) transparent;}
+#chatBox::-webkit-scrollbar{width:4px;}
+#chatBox::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);}
+
+/* ─── Welcome ─── */
+#welcome{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:18px;text-align:center;
+  padding:40px 20px;flex:1;
+  animation:fadeUp .7s ease;
+}
+.welcome-icon{font-size:3.5rem;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 20px var(--glow));}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+#welcome h2{font-size:1.6rem;font-weight:900;
+  background:linear-gradient(135deg,#fff 40%,var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+#welcome p{font-size:.88rem;color:var(--text2);max-width:420px;line-height:1.75;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:600px;}
+.chip{
+  padding:7px 16px;border-radius:24px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  color:var(--text2);font-family:'Cairo',sans-serif;font-size:.79rem;
+  cursor:pointer;transition:.2s;
+}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,198,255,.07);
+  transform:translateY(-2px);}
+
+/* ─── Messages ─── */
+.msg{animation:fadeUp .4s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.bubble-user{
+  background:rgba(0,198,255,.08);border:1px solid rgba(0,198,255,.15);
+  padding:12px 18px;border-radius:18px 18px 4px 18px;
+  display:inline-block;max-width:78%;font-size:.93rem;line-height:1.7;
+}
+.msg-label{font-size:.68rem;color:var(--text3);margin-bottom:6px;font-weight:700;
+  display:flex;align-items:center;gap:6px;letter-spacing:.04em;}
+
+/* ─── Status Panel ─── */
+.status-panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.status-header{display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--text2);}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.1);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.round-tag{font-size:.62rem;font-weight:800;color:var(--accent);
+  background:rgba(0,198,255,.1);padding:2px 8px;border-radius:8px;
+  border:1px solid rgba(0,198,255,.2);}
+.agents-progress{display:flex;flex-direction:column;gap:8px;}
+.agent-row{display:flex;align-items:center;gap:10px;}
+.agent-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:.3s;}
+.agent-dot.thinking{background:var(--accent);animation:pulse 1.3s ease-in-out infinite;
+  box-shadow:0 0 8px var(--accent);}
+.agent-dot.done{background:var(--success);}
+.agent-dot.error{background:var(--danger);}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.3)}}
+.agent-name-row{font-size:.78rem;color:var(--text2);flex:1;}
+.agent-name-row.done{color:var(--success);}
+.agent-prog-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;flex:1;}
+.agent-prog-fill{height:100%;width:0%;border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  transition:width 1.5s ease;}
+.agent-prog-fill.done{width:100%;background:var(--success);}
+.agent-check{font-size:.8rem;color:var(--success);opacity:0;transition:.3s;flex-shrink:0;}
+.agent-check.show{opacity:1;}
+
+/* ─── Judge Bubble ─── */
+.judge-wrap{display:flex;flex-direction:column;gap:8px;}
+.judge-bubble{
+  background:rgba(255,183,0,.03);
+  border:1px solid rgba(255,183,0,.18);
+  border-right:3px solid var(--gold);
+  padding:22px 24px;border-radius:4px 18px 18px 18px;
+  font-size:.93rem;line-height:1.85;
+  box-shadow:0 8px 40px rgba(255,183,0,.06);
+  animation:judgeIn .5s cubic-bezier(.16,1,.3,1);
+}
+@keyframes judgeIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.judge-bubble h2{color:var(--gold);font-size:1.05rem;margin:20px 0 10px;font-weight:800;}
+.judge-bubble p{margin-bottom:12px;color:#c8d0de;}
+.judge-bubble strong{color:#fff;}
+.judge-bubble table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.84rem;}
+.judge-bubble th{background:rgba(255,255,255,.04);color:var(--accent);padding:9px 12px;
+  text-align:right;border:1px solid var(--border);}
+.judge-bubble td{padding:9px 12px;border:1px solid var(--border);color:#9aa8be;}
+.judge-bubble ul,.judge-bubble ol{padding-right:20px;margin-bottom:12px;}
+.judge-bubble li{margin-bottom:6px;}
+.judge-cursor{display:inline-block;width:2px;height:1.1em;background:var(--gold);
+  margin-right:2px;vertical-align:bottom;animation:blink .7s step-end infinite;}
+@keyframes blink{50%{opacity:0}}
+
+/* ─── Action Buttons ─── */
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.act-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:20px;font-size:.74rem;font-weight:700;
+  font-family:'Cairo',sans-serif;cursor:pointer;transition:.2s;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text2);
+}
+.act-btn:hover{background:rgba(255,255,255,.08);border-color:var(--border2);
+  color:var(--text);transform:translateY(-1px);}
+.act-btn.gold{background:rgba(255,183,0,.07);border-color:rgba(255,183,0,.25);color:var(--gold);}
+.act-btn.gold:hover{background:rgba(255,183,0,.13);}
+
+/* ─── Input ─── */
+.input-wrap{border-top:1px solid var(--border);padding:14px 0 18px;flex-shrink:0;}
+.input-box{
+  display:flex;gap:10px;align-items:flex-end;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:14px;padding:10px 12px;
+  transition:.25s;
+}
+.input-box:focus-within{border-color:rgba(0,198,255,.3);box-shadow:0 0 0 3px rgba(0,198,255,.06);}
+#userInput{
+  flex:1;background:transparent;border:none;color:var(--text);
+  font-family:'Cairo',sans-serif;font-size:.93rem;resize:none;
+  min-height:44px;max-height:130px;line-height:1.6;outline:none;
+}
+.input-footer{display:flex;align-items:center;justify-content:space-between;
+  padding:4px 2px 0;font-size:.68rem;color:var(--text3);}
+.char-count{}
+.char-count.warn{color:var(--gold);}
+#sendBtn{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border:none;font-size:1.1rem;cursor:pointer;
+  box-shadow:0 4px 16px var(--glow);transition:.2s;
+  display:flex;align-items:center;justify-content:center;
+}
+#sendBtn:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 6px 22px var(--glow);}
+#sendBtn:active{transform:scale(.96);}
+#sendBtn:disabled{background:rgba(255,255,255,.07);box-shadow:none;cursor:not-allowed;transform:none;}
+
+/* ─── Toast ─── */
+#toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:rgba(20,28,48,.96);border:1px solid var(--border);
+  padding:10px 22px;border-radius:12px;font-size:.82rem;font-weight:600;
+  opacity:0;pointer-events:none;z-index:9999;transition:.3s;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.success{border-color:rgba(0,230,118,.4);color:var(--success);}
+#toast.error{border-color:rgba(255,77,109,.4);color:var(--danger);}
+#toast.info{border-color:rgba(0,198,255,.3);color:var(--accent);}
+
+/* ─── Modal ─── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.8);
+  backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;
+  padding:20px;opacity:0;pointer-events:none;transition:.25s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-box{
+  background:#080e1c;border:1px solid var(--border2);border-radius:20px;
+  width:100%;max-width:780px;max-height:84vh;display:flex;flex-direction:column;
+  transform:translateY(16px);transition:.25s;overflow:hidden;
+}
+.modal-overlay.open .modal-box{transform:translateY(0);}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 22px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.modal-head-title{font-size:.95rem;font-weight:800;color:var(--gold);}
+.modal-close{
+  width:30px;height:30px;border-radius:8px;background:var(--surface);
+  border:1px solid var(--border);cursor:pointer;color:var(--text2);font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:.2s;
+}
+.modal-close:hover{color:var(--text);background:var(--surface2);}
+.modal-body{flex:1;overflow-y:auto;padding:20px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.07) transparent;}
+.bs-sec{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden;}
+.bs-sec-head{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);
+  cursor:pointer;user-select:none;
+}
+.bs-sec-head:hover{background:rgba(255,255,255,.04);}
+.bs-tag{font-size:.68rem;font-weight:800;padding:2px 9px;border-radius:6px;}
+.bs-tag.r1{background:rgba(0,198,255,.1);color:var(--accent);}
+.bs-tag.r2{background:rgba(255,107,157,.1);color:#ff6b9d;}
+.bs-sec-title{flex:1;font-size:.84rem;font-weight:700;}
+.bs-arrow{font-size:.65rem;color:var(--text3);transition:.2s;}
+.bs-arrow.open{transform:rotate(180deg);}
+.bs-body{padding:14px 16px;display:none;}
+.bs-body.open{display:block;}
+.bs-agent-block{
+  margin-bottom:12px;padding:12px 14px;
+  background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;
+}
+.bs-agent-title{font-size:.73rem;font-weight:800;margin-bottom:8px;}
+.bs-agent-content{font-size:.82rem;line-height:1.75;}
+.bs-agent-content h1,.bs-agent-content h2,.bs-agent-content h3{font-size:.88rem;margin:8px 0 4px;}
+.bs-agent-content p{margin-bottom:6px;}
+.bs-agent-content table{width:100%;border-collapse:collapse;font-size:.78rem;margin:8px 0;}
+.bs-agent-content th,.bs-agent-content td{border:1px solid var(--border);padding:5px 8px;text-align:right;}
+.bs-agent-content th{background:rgba(255,255,255,.03);}
+
+/* ─── Responsive ─── */
+@media(max-width:680px){
+  .sidebar{position:fixed;right:0;top:0;bottom:0;z-index:500;transform:translateX(0);}
+  .sidebar.closed{transform:translateX(100%);width:var(--sidebar-w);}
+  header{padding:10px 14px;}
+  .logo-text{font-size:1.1rem;}
+  .hdr-btn span{display:none;}
+  #chatBox{padding:16px 0;}
+  .bubble-user{max-width:92%;}
+  .judge-bubble{padding:16px;}
+  .input-wrap{padding:10px 0 14px;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<div class="progress"><div class="progress-fill" id="progressBar"></div></div>
+
+<header>
+  <div class="logo" onclick="newChat()">
+    <div class="logo-mark">⚖</div>
+    <div>
+      <div class="logo-text">ميزان</div>
+      <div class="logo-sub">المحرك التحليلي الخارق</div>
+    </div>
+  </div>
+  <div class="hdr-btns">
+    <button class="hdr-btn" id="sidebarToggle" onclick="toggleSidebar()">📁 <span>المحفوظات</span></button>
+    <button class="hdr-btn primary" onclick="newChat()">+ <span>نقاش جديد</span></button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar closed" id="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">📂 سجل المحادثات</div>
+      <button class="sb-new" onclick="newChat()">+ محادثة جديدة</button>
+    </div>
+    <div class="sb-list" id="sidebarList"></div>
+  </aside>
+
+  <!-- Chat -->
+  <div class="chat-wrap">
+    <div class="chat-inner">
+      <div id="chatBox">
+        <div id="welcome">
+          <div class="welcome-icon">⚔️</div>
+          <h2>المحرك التحليلي الخارق</h2>
+          <p>ثلاثة عقول من Meta وOpenAI وAlibabaتتناقش — ثم Gemini يصدر حكماً حاسماً مدعوماً ببيانات الويب.</p>
+          <div class="chips" id="chips">
+            <button class="chip">هل الذكاء الاصطناعي يهدد الوظائف؟</button>
+            <button class="chip">ما أفضل لغة برمجة للمبتدئين؟</button>
+            <button class="chip">هل الطاقة النووية آمنة لمصر؟</button>
+            <button class="chip">العمل عن بُعد أم من المكتب؟</button>
+            <button class="chip">هل العملات الرقمية مستقبل المال؟</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-wrap">
+        <div class="input-box">
+          <textarea id="userInput" rows="1" placeholder="اكتب سؤالك هنا..."></textarea>
+          <button id="sendBtn" title="إرسال">▲</button>
+        </div>
+        <div class="input-footer">
+          <span id="charCount" class="char-count">0 / 2000</span>
+          <span style="color:var(--text3);font-size:.65rem;">Enter للإرسال · Shift+Enter لسطر جديد</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Modal كواليس -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-head-title">🎭 كواليس النقاش</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ─── Particles ───────────────────────────────────────────
+(function(){
+  const c=document.getElementById('canvas');
+  const ctx=c.getContext('2d');
+  let W,H,pts=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight;}
+  resize();window.addEventListener('resize',()=>{resize();init();});
+  function init(){
+    pts=[];
+    const n=Math.floor(W*H/18000);
+    for(let i=0;i<n;i++) pts.push({
+      x:Math.random()*W,y:Math.random()*H,
+      vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,
+      r:Math.random()*1.5+.5
+    });
+  }
+  init();
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,198,255,.35)';ctx.fill();
+    });
+    pts.forEach((a,i)=>{
+      for(let j=i+1;j<pts.length;j++){
+        const b=pts[j];
+        const d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(d<120){
+          ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+          ctx.strokeStyle=`rgba(0,198,255,${.08*(1-d/120)})`;
+          ctx.lineWidth=.6;ctx.stroke();
+        }
+      }
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ─── Helpers ─────────────────────────────────────────────
+marked.setOptions({breaks:true,gfm:true});
+function safeMarkdown(t){
+  if(!t)return'';
+  return DOMPurify.sanitize(marked.parse(t),{
+    ALLOWED_TAGS:['h1','h2','h3','p','ul','ol','li','strong','em','code','pre','blockquote','hr','br','table','thead','tbody','tr','th','td','span','a'],
+    ALLOWED_ATTR:['class','href','target','rel']
+  });
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ─── Toast ────────────────────────────────────────────────
+function toast(msg,type='info'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show '+type;
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);
+}
+
+// ─── Placeholders ─────────────────────────────────────────
+const PH=[
+  'اكتب سؤالك أو موضوعك للنقاش...',
+  'مثلاً: هل الذكاء الاصطناعي خطر على البشرية؟',
+  'مثلاً: ما أفضل إطار عمل للـ Frontend؟',
+  'مثلاً: هل العمل الحر أفضل من الوظيفة؟',
+];
+let phIdx=0;
+setInterval(()=>{
+  const inp=document.getElementById('userInput');
+  if(!inp.value){phIdx=(phIdx+1)%PH.length;inp.placeholder=PH[phIdx];}
+},4000);
+
+// ─── Char Counter ─────────────────────────────────────────
+document.getElementById('userInput').addEventListener('input',function(){
+  const n=this.value.length;
+  const c=document.getElementById('charCount');
+  c.textContent=n+' / 2000';
+  c.className='char-count'+(n>1800?' warn':'');
+  this.style.height='auto';
+  this.style.height=Math.min(this.scrollHeight,130)+'px';
+});
+document.getElementById('userInput').addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+});
+
+// Chips
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',function(){
+  document.getElementById('userInput').value=this.textContent;
+  document.getElementById('userInput').focus();
+  document.getElementById('userInput').dispatchEvent(new Event('input'));
+}));
+
+// ─── Sidebar ─────────────────────────────────────────────
+const STORE='mizan_v3';
+let currentId=null;
+function getSessions(){try{return JSON.parse(localStorage.getItem(STORE))||[];}catch{return[];}}
+function setSessions(s){localStorage.setItem(STORE,JSON.stringify(s));}
+function fmtDate(iso){
+  const d=new Date(iso),now=new Date(),diff=now-d;
+  if(diff<60000)return'الآن';
+  if(diff<3600000)return Math.floor(diff/60000)+' د';
+  if(diff<86400000)return Math.floor(diff/3600000)+' س';
+  if(diff<172800000)return'أمس';
+  return d.toLocaleDateString('ar-EG',{month:'short',day:'numeric'});
+}
+function renderSidebar(){
+  const s=getSessions();
+  const el=document.getElementById('sidebarList');
+  if(!s.length){
+    el.innerHTML='<div class="sb-empty"><div class="sb-empty-icon">💬</div>لا توجد محادثات بعد.</div>';return;
+  }
+  el.innerHTML=s.map(x=>`
+    <div class="sb-item ${x.id===currentId?'active':''}" onclick="loadSession('${x.id}')">
+      <div class="sb-q">${esc(x.q)}</div>
+      <div class="sb-date">${fmtDate(x.date)}</div>
+      <button class="sb-del" onclick="delSession('${x.id}',event)">✕</button>
+    </div>`).join('');
+}
+function saveSession(id,q,answer,history){
+  const s=getSessions().filter(x=>x.id!==id);
+  s.unshift({id,q,answer,history,date:new Date().toISOString()});
+  setSessions(s.slice(0,50));renderSidebar();
+}
+function delSession(id,e){
+  e.stopPropagation();
+  setSessions(getSessions().filter(x=>x.id!==id));
+  if(currentId===id)newChat();else renderSidebar();
+}
+function loadSession(id){
+  const s=getSessions().find(x=>x.id===id);
+  if(!s)return;
+  currentId=id;streamedContent=s.answer;savedHistory=s.history;
+  const box=document.getElementById('chatBox');
+  box.innerHTML='';
+  addUserMsg(s.q,false);
+  const w=document.createElement('div');
+  w.className='msg judge-wrap';
+  w.innerHTML=`<div class="msg-label">⚖️ القاضي المحايد — الحكم النهائي</div>
+    <div class="judge-bubble">${safeMarkdown(s.answer)}</div>`;
+  box.appendChild(w);
+  addActionButtons(w);
+  renderSidebar();box.scrollTop=box.scrollHeight;
+}
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  sb.classList.toggle('closed');
+}
+renderSidebar();
+
+// ─── State ────────────────────────────────────────────────
+let isStreaming=false,streamedContent='',savedHistory=null;
+let judgeEl=null,cursorEl=null;
+
+function setProgress(p){document.getElementById('progressBar').style.width=p+'%';}
+function scrollBot(){const b=document.getElementById('chatBox');b.scrollTop=b.scrollHeight;}
+
+function addUserMsg(text,animate=true){
+  const w=document.getElementById('welcome');if(w)w.remove();
+  const d=document.createElement('div');
+  d.className='msg';d.style.display='flex';d.style.justifyContent='flex-start';
+  if(!animate)d.style.animation='none';
+  d.innerHTML='<div class="bubble-user">'+esc(text)+'</div>';
+  document.getElementById('chatBox').appendChild(d);scrollBot();
+}
+
+// ─── Status Panel ─────────────────────────────────────────
+let statusEl=null,badgeMap={};
+function createStatus(round,msg,agents){
+  if(statusEl){statusEl.remove();statusEl=null;}
+  const p=document.createElement('div');p.className='status-panel';
+  const rl=round==='judge'?'⚖ الحكم':round==='prep'?'🌐 بحث':'🔄 الجولة '+round;
+  p.innerHTML=`<div class="status-header"><div class="spin"></div>
+    <span class="round-tag">${rl}</span><span>${esc(msg)}</span></div>
+    <div class="agents-progress" id="ap"></div>`;
+  document.getElementById('chatBox').appendChild(p);
+  statusEl=p;badgeMap={};
+  const ap=p.querySelector('#ap');
+  agents.forEach(a=>{
+    const row=document.createElement('div');row.className='agent-row';
+    row.innerHTML=`<div class="agent-dot thinking" data-dot="${a.id}"></div>
+      <div class="agent-name-row" data-name="${a.id}">${esc(a.emoji||'')} ${esc(a.name)}</div>
+      <div class="agent-prog-bar"><div class="agent-prog-fill" data-bar="${a.id}"></div></div>
+      <div class="agent-check" data-chk="${a.id}">✓</div>`;
+    ap.appendChild(row);
+    badgeMap[a.id]={
+      dot:row.querySelector('[data-dot]'),
+      name:row.querySelector('[data-name]'),
+      bar:row.querySelector('[data-bar]'),
+      chk:row.querySelector('[data-chk]')
+    };
+    // animate progress bar
+    setTimeout(()=>{if(row.querySelector('[data-bar]'))row.querySelector('[data-bar]').style.width='85%';},200);
+  });
+  scrollBot();
+}
+function markDone(id,err){
+  const b=badgeMap[id];if(!b)return;
+  b.dot.classList.remove('thinking');b.dot.classList.add(err?'error':'done');
+  b.bar.classList.add('done');b.name.classList.add('done');
+  b.chk.classList.add('show');
+}
+function removeStatus(){if(statusEl){statusEl.remove();statusEl=null;badgeMap={};}}
+
+// ─── Judge Bubble ─────────────────────────────────────────
+function createJudgeBubble(){
+  removeStatus();
+  const w=document.createElement('div');w.className='msg judge-wrap';
+  w.innerHTML=`<div class="msg-label">⚖️ القاضي المحايد — الحكم النهائي</div>
+    <div class="judge-bubble"><span class="judge-text"></span><span class="judge-cursor"></span></div>`;
+  document.getElementById('chatBox').appendChild(w);
+  judgeEl=w.querySelector('.judge-text');
+  cursorEl=w.querySelector('.judge-cursor');
+  streamedContent='';scrollBot();
+  return w;
+}
+function appendToken(t){
+  streamedContent+=t;
+  if(judgeEl)judgeEl.innerHTML=safeMarkdown(streamedContent);
+  scrollBot();
+}
+function finalizeJudge(wrapper){
+  if(cursorEl){cursorEl.remove();cursorEl=null;}
+  if(judgeEl)judgeEl.innerHTML=safeMarkdown(streamedContent);
+  addActionButtons(wrapper);setProgress(100);scrollBot();
+}
+
+// ─── Action Buttons ───────────────────────────────────────
+function addActionButtons(wrapper){
+  const row=document.createElement('div');row.className='action-row';
+  const btns=[
+    {label:'🎭 كواليس النقاش',cls:'gold',fn:()=>openModal()},
+    {label:'📋 نسخ',cls:'',fn:(btn)=>{
+      navigator.clipboard.writeText(streamedContent).then(()=>{
+        btn.textContent='✓ تم النسخ';setTimeout(()=>btn.textContent='📋 نسخ',2000);
+      });
+    }},
+    {label:'📄 PDF',cls:'',fn:()=>downloadPDF()},
+    {label:'📝 MD',cls:'',fn:()=>downloadMD()},
+  ];
+  btns.forEach(b=>{
+    const btn=document.createElement('button');
+    btn.className='act-btn '+b.cls;btn.textContent=b.label;
+    btn.addEventListener('click',()=>b.fn(btn));
+    row.appendChild(btn);
+  });
+  wrapper.appendChild(row);
+}
+
+// ─── Downloads ────────────────────────────────────────────
+function downloadPDF(){
+  const el=document.createElement('div');
+  el.innerHTML='<h1>⚖ ميزان — الحكم النهائي</h1><hr/>'+safeMarkdown(streamedContent);
+  html2pdf().set({margin:15,filename:'mizan.pdf'}).from(el).save();
+  toast('✅ جاري تحميل PDF','success');
+}
+function downloadMD(){
+  const blob=new Blob(['# ميزان\n\n'+streamedContent],{type:'text/markdown;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='mizan.md';a.click();toast('✅ تم التحميل','success');
+}
+
+// ─── Modal ────────────────────────────────────────────────
+function openModal(){
+  if(!savedHistory){toast('لا توجد بيانات كواليس','error');return;}
+  const {round1,round2,agents}=savedHistory;
+  const body=document.getElementById('modalBody');body.innerHTML='';
+  const colors={agent1:'var(--accent)',agent2:'#ff6b9d',agent3:'var(--success)'};
+  [['round1','الجولة 1 — آراء مستقلة','r1'],['round2','الجولة 2 — النقد الموجه','r2']].forEach(([key,title,tag])=>{
+    const sec=document.createElement('div');sec.className='bs-sec';
+    const head=document.createElement('div');head.className='bs-sec-head';
+    head.innerHTML=`<span class="bs-tag ${tag}">${tag==='r1'?'ج١':'ج٢'}</span>
+      <span class="bs-sec-title">${title}</span><span class="bs-arrow open">▲</span>`;
+    const bd=document.createElement('div');bd.className='bs-body open';
+    agents.forEach(a=>{
+      const blk=document.createElement('div');blk.className='bs-agent-block';
+      blk.innerHTML=`<div class="bs-agent-title" style="color:${colors[a.id]||'var(--text2)'}">
+        ${esc(a.emoji)} ${esc(a.name)}</div>
+        <div class="bs-agent-content">${safeMarkdown(savedHistory[key][a.id]||'—')}</div>`;
+      bd.appendChild(blk);
+    });
+    head.addEventListener('click',()=>{
+      const open=bd.classList.toggle('open');
+      head.querySelector('.bs-arrow').classList.toggle('open',open);
+    });
+    sec.appendChild(head);sec.appendChild(bd);body.appendChild(sec);
+  });
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ─── Event Handler ────────────────────────────────────────
+function handleEvent(d){
+  switch(d.type){
+    case'status':
+      createStatus(d.round,d.message,d.agents||[]);
+      if(d.round===1)setProgress(5);
+      else if(d.round===2)setProgress(40);
+      else if(d.round==='judge')setProgress(72);
+      break;
+    case'agent_done':
+      markDone(d.agentId,d.error);
+      break;
+    case'round_complete':
+      if(d.round===1)setProgress(38);
+      else if(d.round===2)setProgress(68);
+      break;
+    case'token':
+      if(!judgeEl){judgeWrap=createJudgeBubble();}
+      appendToken(d.token);
+      break;
+    case'final':
+      savedHistory=d.history;
+      finalizeJudge(judgeWrap);
+      if(currentId)saveSession(currentId,currentQuery,streamedContent,d.history);
+      break;
+    case'error':
+      removeStatus();setProgress(0);
+      toast(d.message||'خطأ في السيرفر','error');
+      break;
+  }
+}
+
+// ─── Send ─────────────────────────────────────────────────
+let currentQuery='',judgeWrap=null;
+async function sendMessage(){
+  if(isStreaming)return;
+  const q=document.getElementById('userInput').value.trim().slice(0,2000);
+  if(!q)return;
+  isStreaming=true;currentQuery=q;currentId='s'+Date.now();
+  judgeEl=null;cursorEl=null;judgeWrap=null;
+  document.getElementById('sendBtn').disabled=true;
+  document.getElementById('userInput').value='';
+  document.getElementById('userInput').style.height='auto';
+  document.getElementById('charCount').textContent='0 / 2000';
+  setProgress(2);addUserMsg(q);
+  try{
+    const r=await fetch('/chat',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userQuery:q})});
+    if(!r.ok){
+      toast(r.status===429?'طلبات كثيرة، انتظر قليلاً':'خطأ في السيرفر','error');
+      setProgress(0);return;
+    }
+    const reader=r.body.getReader();
+    const dec=new TextDecoder();let buf='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop();
+      for(const l of lines){
+        const tr=l.trim();
+        if(!tr||!tr.startsWith('data:'))continue;
+        const js=tr.slice(5).trim();if(!js)continue;
+        try{handleEvent(JSON.parse(js));}catch{}
+      }
+    }
+    if(buf.trim().startsWith('data:')){
+      try{handleEvent(JSON.parse(buf.trim().slice(5).trim()));}catch{}
+    }
+  }catch(e){
+    removeStatus();setProgress(0);
+    toast('فشل الاتصال بالسيرفر','error');
+  }finally{
+    isStreaming=false;
+    document.getElementById('sendBtn').disabled=false;
+    scrollBot();
+  }
+}
+document.getElementById('sendBtn').addEventListener('click',sendMessage);
+
+// ─── New Chat ─────────────────────────────────────────────
+function newChat(){
+  if(isStreaming)return;
+  document.getElementById('chatBox').innerHTML=`
+    <div id="welcome">
+      <div class="welcome-icon">⚔️</div>
+      <h2>المحرك التحليلي الخارق</h2>
+      <p>ثلاثة عقول من Meta وOpenAI وAlibabaتتناقش — ثم Gemini يصدر حكماً حاسماً مدعوماً ببيانات الويب.</p>
+      <div class="chips" id="chips">
+        <button class="chip">هل الذكاء الاصطناعي يهدد الوظائف؟</button>
+        <button class="chip">ما أفضل لغة برمجة للمبتدئين؟</button>
+        <button class="chip">هل الطاقة النووية آمنة لمصر؟</button>
+        <button class="chip">العمل عن بُعد أم من المكتب؟</button>
+        <button class="chip">هل العملات الرقمية مستقبل المال؟</button>
+      </div>
+    </div>`;
+  document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',function(){
+    document.getElementById('userInput').value=this.textContent;
+    document.getElementById('userInput').focus();
+    document.getElementById('userInput').dispatchEvent(new Event('input'));
+  }));
+  streamedContent='';savedHistory=null;judgeEl=null;judgeWrap=null;currentId=null;
+  setProgress(0);renderSidebar();
+}
+</script>
+</body>
+</html>
