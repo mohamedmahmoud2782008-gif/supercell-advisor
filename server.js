@@ -117,6 +117,7 @@ app.use(helmet({
         }
     },
     crossOriginEmbedderPolicy: false,
+    frameguard: false,
     crossOriginResourcePolicy: { policy: "same-origin" }
 }));
 
