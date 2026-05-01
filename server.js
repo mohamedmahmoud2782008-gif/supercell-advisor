@@ -101,7 +101,7 @@ geminiBreaker.fallback(() => { throw AppError.upstream('Gemini unavailable — c
 const app = express();
 
 // ── Helmet + CSP ──────────────────────────────────
-app.use(helmet({ contentsecuritypolicy: false, frameguard: false, crossoriginembedderpolicy: false, crossoriginresourcepolicy: false,
+app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
@@ -117,13 +117,12 @@ app.use(helmet({ contentsecuritypolicy: false, frameguard: false, crossoriginemb
         }
     },
     crossOriginEmbedderPolicy: false,
-    frameguard: false,
     crossOriginResourcePolicy: { policy: "same-origin" }
 }));
 
 // ── CORS — Fix #2: strict origin from env ─────────
 app.use(cors({
-    origin: '*',
+    origin:  process.env.ALLOWED_ORIGIN || 'http://localhost:3000',
     methods: ['GET', 'POST']
 }));
 
@@ -224,8 +223,12 @@ app.post('/analyze-image',
         console.log(`[Image] game=${game} size=${req.file.size}`);
 
         try {
-            const basePrompt = VISION_PROMPTS[game] || VISION_PROMPTS.general;
-            const fullPrompt = userQuery ? `User question: "${userQuery}"\n\n${basePrompt}` : basePrompt;
+            // Detect intent: attack vs defense
+            const q = (userQuery || '').toLowerCase();
+            const isDefense = /\u062a\u0635\u0645\u064a\u0645|\u062f\u0641\u0627\u0639|defense|improve|strengthen/.test(q);
+            const visionKey = (game === 'coc' && isDefense) ? 'coc_defense' : (game === 'coc' ? 'coc_attack' : game);
+            const basePrompt = VISION_PROMPTS[visionKey] || VISION_PROMPTS.coc;
+            const fullPrompt = userQuery ? `\u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645: "${userQuery}"\n\n${basePrompt}` : basePrompt;
             const analysis   = await callGeminiVision(googleTokens, req.file.buffer, req.file.mimetype, fullPrompt);
             res.json({ analysis, game, gameLabel: GAME_LABELS[game], model: 'gemini-vision' });
         } catch (err) {
