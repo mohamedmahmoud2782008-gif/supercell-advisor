@@ -101,7 +101,7 @@ geminiBreaker.fallback(() => { throw AppError.upstream('Gemini unavailable — c
 const app = express();
 
 // ── Helmet + CSP ──────────────────────────────────
-app.use(helmet({
+app.use(helmet({ contentsecuritypolicy: false, frameguard: false, crossoriginembedderpolicy: false, crossoriginresourcepolicy: false,
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
